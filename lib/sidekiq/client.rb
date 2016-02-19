@@ -60,9 +60,10 @@ module Sidekiq
     #   push('queue' => 'my_queue', 'class' => MyWorker, 'args' => ['foo', 1, :bat => 'bar'])
     #
     def push(item)
+      Sidekiq.logger.warn "SK-BR: pushing #{item}"
       normed = normalize_item(item)
       payload = process_single(item['class'], normed)
-
+      Sidekiq.logger.warn "SK-BR: payload #{payload}"
       if payload
         raw_push([payload])
         payload['jid']
@@ -168,7 +169,10 @@ module Sidekiq
 
     def raw_push(payloads)
       @redis_pool.with do |conn|
+        Sidekiq.logger.warn "SK-BR: ping: #{conn.get('ping')}"
+        Sidekiq.logger.warn "SK-BR: pushing with conn: #{conn.to_yaml}"
         conn.multi do
+          Sidekiq.logger.warn "SK-BR: in multi"
           atomic_push(conn, payloads)
         end
       end
@@ -182,12 +186,14 @@ module Sidekiq
           [at, Sidekiq.dump_json(hash)]
         end)
       else
+        Sidekiq.logger.warn "SK-BR: start atomic push"
         q = payloads.first['queue']
         now = Time.now.to_f
         to_push = payloads.map do |entry|
           entry['enqueued_at'.freeze] = now
           Sidekiq.dump_json(entry)
         end
+        Sidekiq.logger.warn "SK-BR: to_push: #{to_push}"
         conn.sadd('queues'.freeze, q)
         conn.lpush("queue:#{q}", to_push)
       end
