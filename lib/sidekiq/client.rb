@@ -168,6 +168,8 @@ module Sidekiq
     private
 
     def raw_push(payloads)
+      Sidekiq.logger.warn "SK-BR: @redis_pool: #{@redis_pool.inspect}"
+      Sidekiq.logger.warn "SK-BR: @redis_pool.@available: #{@redis_pool.instance_variable_get(:@available).inspect}"
       @redis_pool.with do |conn|
         Sidekiq.logger.warn "SK-BR: ping: #{conn.get('ping')}"
         Sidekiq.logger.warn "SK-BR: pushing with conn: #{conn.to_yaml}"
@@ -177,6 +179,9 @@ module Sidekiq
         end
       end
       true
+    rescue Exception => e
+      Sidekiq.logger.warn "SK-BR: raw_push exception => #{e.class.to_s} - #{e.message} - #{e.to_yaml}"
+      raise e
     end
 
     def atomic_push(conn, payloads)
