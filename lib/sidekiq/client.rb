@@ -65,8 +65,11 @@ module Sidekiq
       payload = process_single(item['class'], normed)
       Sidekiq.logger.warn "SK-BR: payload #{payload}"
       if payload
+        Sidekiq.logger.warn "SK-BR: about to raw push"
         raw_push([payload])
         payload['jid']
+      else
+        Sidekiq.logger.warn "SK-BR: payload was falsy. payload: #{payload}"
       end
     end
 
