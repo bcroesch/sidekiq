@@ -66,6 +66,7 @@ module Sidekiq
     alias_method :raw_push_real, :raw_push
 
     def raw_push(payloads)
+      Sidekiq.logger.warn "SK-BR: in testing version of raw_push"
       if Sidekiq::Testing.fake?
         payloads.each do |job|
           Queues.push(job['queue'], job['class'], Sidekiq.load_json(Sidekiq.dump_json(job)))

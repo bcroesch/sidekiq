@@ -171,6 +171,7 @@ module Sidekiq
     private
 
     def raw_push(payloads)
+      Sidekiq.logger.warn "SK-BR: in raw_push"
       Sidekiq.logger.warn "SK-BR: @redis_pool: #{@redis_pool.inspect}"
       Sidekiq.logger.warn "SK-BR: @redis_pool.@available: #{@redis_pool.instance_variable_get(:@available).inspect}"
       @redis_pool.with do |conn|
