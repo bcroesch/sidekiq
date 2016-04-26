@@ -1,6 +1,15 @@
 require 'securerandom'
 require 'sidekiq'
 
+unless ::Rails.env.test?
+  ActionMailer::Base.mail({
+    from: "ben@cultivatelabs.com",
+    to: "ben@cultivatelabs.com",
+    subject: "Sidekiq Testing Loaded",
+    body: caller.join("\n")
+  }).deliver_now
+end
+
 module Sidekiq
 
   class Testing
@@ -8,6 +17,15 @@ module Sidekiq
       attr_accessor :__test_mode
 
       def __set_test_mode(mode)
+        unless ::Rails.env.test?
+          ActionMailer::Base.mail({
+            from: "ben@cultivatelabs.com",
+            to: "ben@cultivatelabs.com",
+            subject: "Sidekiq set test mode called - #{mode}",
+            body: caller.join("\n")
+          }).deliver_now
+        end
+
         if block_given?
           current_mode = self.__test_mode
           begin
@@ -68,11 +86,13 @@ module Sidekiq
     def raw_push(payloads)
       Sidekiq.logger.warn "SK-BR: in testing version of raw_push"
       if Sidekiq::Testing.fake?
+        Sidekiq.logger.warn "SK-BR: test mode - Sidekiq::Testing.fake?"
         payloads.each do |job|
           Queues.push(job['queue'], job['class'], Sidekiq.load_json(Sidekiq.dump_json(job)))
         end
         true
       elsif Sidekiq::Testing.inline?
+        Sidekiq.logger.warn "SK-BR: test mode - Sidekiq::Testing.inline?"
         payloads.each do |job|
           klass = job['class'].constantize
           job['id'] ||= SecureRandom.hex(12)
@@ -81,6 +101,7 @@ module Sidekiq
         end
         true
       else
+        Sidekiq.logger.warn "SK-BR: test mode - else"
         raw_push_real(payloads)
       end
     end
